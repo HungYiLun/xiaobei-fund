@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍯 小貝基金戶</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+  :root {
+    --honey: #F4C430;
+    --honey-dark: #E8A800;
+    --honey-light: #FFF3C4;
+    --orange: #FF8C00;
+    --brown: #8B5E3C;
+    --brown-light: #C49A6C;
+    --cream: #FFF8E7;
+    --white: #FFFFFF;
+    --red: #E74C3C;
+    --green: #27AE60;
+    --gray: #95A5A6;
+    --text: #3D2B1F;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--honey) 0%, var(--orange) 100%);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '🍯';
+    font-size: 80px;
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    opacity: .15;
+  }
+  header::after {
+    content: '🐝';
+    font-size: 50px;
+    position: absolute;
+    right: 80px;
+    top: 8px;
+    opacity: .2;
+  }
+  .bear-icon { font-size: 48px; }
+  .header-text h1 { font-size: 26px; font-weight: 700; color: var(--brown); }
+  .header-text p  { font-size: 13px; color: var(--brown); opacity: .8; margin-top: 2px; }
+
+  /* ── Balance Card ── */
+  .balance-strip {
+    background: var(--white);
+    border-bottom: 3px solid var(--honey);
+    padding: 14px 24px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .bal-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--honey-light);
+    border-radius: 12px;
+    padding: 10px 20px;
+    min-width: 140px;
+  }
+  .bal-card .label { font-size: 11px; color: var(--brown-light); font-weight: 500; }
+  .bal-card .value { font-size: 22px; font-weight: 700; color: var(--orange); }
+  .bal-card .value.profit { color: var(--green); }
+  .bal-card .value.loss   { color: var(--red); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px 0;
+    background: var(--cream);
+  }
+  .tab-btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 12px 12px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #e8d5b0;
+    color: var(--brown);
+    transition: all .2s;
+  }
+  .tab-btn.active {
+    background: var(--honey);
+    color: var(--brown);
+    box-shadow: 0 -3px 8px rgba(0,0,0,.1);
+  }
+  .tab-btn:hover:not(.active) { background: #f0dfb8; }
+
+  /* ── Main Content ── */
+  .content {
+    background: var(--white);
+    border-radius: 0 12px 12px 12px;
+    margin: 0 24px 24px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  }
+
+  /* ── Section Header ── */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .section-title { font-size: 16px; font-weight: 700; color: var(--brown); }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-add    { background: var(--honey); color: var(--brown); }
+  .btn-add:hover { background: var(--honey-dark); transform: translateY(-1px); }
+  .btn-edit   { background: #EBF5FB; color: #2980B9; font-size: 12px; padding: 4px 10px; }
+  .btn-delete { background: #FDEDEC; color: var(--red); font-size: 12px; padding: 4px 10px; }
+  .btn-save   { background: var(--green); color: white; }
+  .btn-cancel { background: var(--gray); color: white; }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--honey-light);
+    color: var(--brown);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--honey);
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f5e8d0;
+    white-space: nowrap;
+  }
+  tr:hover td { background: #fffbf0; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-in  { background: #D5F5E3; color: #1E8449; }
+  .badge-out { background: #FADBD8; color: #922B21; }
+  .badge-who { background: var(--honey-light); color: var(--brown); }
+  .badge-closed   { background: #D5F5E3; color: #1E8449; }
+  .badge-open     { background: #FEF9E7; color: #9A7D0A; }
+  .amount-pos { color: var(--green); font-weight: 700; }
+  .amount-neg { color: var(--red); font-weight: 700; }
+
+  /* ── Charts ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 24px;
+  }
+  @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-box {
+    background: var(--honey-light);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .chart-box h3 { font-size: 13px; color: var(--brown); margin-bottom: 10px; font-weight: 700; }
+  .chart-box canvas { max-height: 220px; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: 18px;
+    padding: 28px;
+    width: 90%;
+    max-width: 540px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    position: relative;
+  }
+  .modal h2 {
+    font-size: 18px;
+    color: var(--brown);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; color: var(--brown-light); font-weight: 600; }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 9px 12px;
+    border: 2px solid #f0ddb8;
+    border-radius: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color .2s;
+    background: var(--cream);
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--honey);
+  }
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 22px;
+  }
+
+  /* ── Honeycomb decoration ── */
+  .honey-divider {
+    text-align: center;
+    color: var(--honey);
+    font-size: 18px;
+    letter-spacing: 4px;
+    margin: 12px 0 4px;
+    opacity: .5;
+  }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 40px; color: var(--brown-light); }
+  .empty span { font-size: 40px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="bear-icon">🐻</div>
+  <div class="header-text">
+    <h1>小貝基金戶 🍯</h1>
+    <p>倫寶 &amp; 玉寶 的投資與儲蓄記錄</p>
+  </div>
+</header>
+
+<!-- Balance Strip -->
+<div class="balance-strip">
+  <div class="bal-card">
+    <span class="label">🐻 帳戶餘額</span>
+    <span class="value" id="totalBalance">$0</span>
+  </div>
+  <div class="bal-card">
+    <span class="label">📦 投資商品數</span>
+    <span class="value" id="totalItems">0</span>
+  </div>
+  <div class="bal-card">
+    <span class="label">💰 總利潤</span>
+    <span class="value profit" id="totalProfit">$0</span>
+  </div>
+  <div class="bal-card">
+    <span class="label">✅ 已結案商品</span>
+    <span class="value" id="closedItems">0</span>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('account')">💰 小帳戶收支明細</button>
+  <button class="tab-btn" onclick="switchTab('invest')">📦 投資商品</button>
+</div>
+
+<!-- Account Tab -->
+<div class="content" id="tab-account">
+  <div class="section-header">
+    <span class="section-title">收支出明細紀錄</span>
+    <button class="btn btn-add" onclick="openModal('account')">＋ 新增記錄</button>
+  </div>
+  <div class="table-wrap">
+    <table id="accountTable">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>誰</th>
+          <th>收/支</th>
+          <th>項目</th>
+          <th>金額</th>
+          <th>餘額</th>
+          <th>備註</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="accountBody"></tbody>
+    </table>
+  </div>
+
+  <div class="honey-divider">🍯 ··· 🐝 ··· 🍯</div>
+
+  <!-- Charts for account -->
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>📊 各人收支分布</h3>
+      <canvas id="chartWho"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>📈 收支類型比較</h3>
+      <canvas id="chartInOut"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Invest Tab -->
+<div class="content" id="tab-invest" style="display:none">
+  <div class="section-header">
+    <span class="section-title">投資商品明細</span>
+    <button class="btn btn-add" onclick="openModal('invest')">＋ 新增商品</button>
+  </div>
+  <div class="table-wrap">
+    <table id="investTable">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>誰</th>
+          <th>商品</th>
+          <th>購買管道</th>
+          <th>購買數量</th>
+          <th>購買單價</th>
+          <th>總成本</th>
+          <th>售出數量</th>
+          <th>售出單價</th>
+          <th>售出總額</th>
+          <th>運費</th>
+          <th>利潤</th>
+          <th>匯款金額</th>
+          <th>結案</th>
+          <th>備註</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="investBody"></tbody>
+    </table>
+  </div>
+
+  <div class="honey-divider">🍯 ··· 🐝 ··· 🍯</div>
+
+  <!-- Charts for invest -->
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>💰 各商品利潤</h3>
+      <canvas id="chartProfit"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>👤 各人投資佔比</h3>
+      <canvas id="chartInvestWho"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Account -->
+<div class="modal-overlay" id="modalAccount">
+  <div class="modal">
+    <h2>🐻 <span id="modalAccountTitle">新增收支記錄</span></h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" id="acc_date">
+      </div>
+      <div class="form-group">
+        <label>誰</label>
+        <select id="acc_who">
+          <option value="倫寶">倫寶</option>
+          <option value="玉寶">玉寶</option>
+          <option value="一起">一起</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>收/支出</label>
+        <select id="acc_type">
+          <option value="收入">收入</option>
+          <option value="支出">支出</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>金額</label>
+        <input type="number" id="acc_amount" placeholder="0">
+      </div>
+      <div class="form-group full">
+        <label>項目</label>
+        <input type="text" id="acc_item" placeholder="請輸入項目名稱">
+      </div>
+      <div class="form-group full">
+        <label>備註</label>
+        <textarea id="acc_note" rows="2" placeholder="可選填"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('account')">取消</button>
+      <button class="btn btn-save" onclick="saveAccount()">🍯 儲存</button>
+    </div>
+    <input type="hidden" id="acc_editIdx" value="-1">
+  </div>
+</div>
+
+<!-- Modal: Invest -->
+<div class="modal-overlay" id="modalInvest">
+  <div class="modal">
+    <h2>📦 <span id="modalInvestTitle">新增投資商品</span></h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" id="inv_date">
+      </div>
+      <div class="form-group">
+        <label>誰</label>
+        <select id="inv_who">
+          <option value="倫寶">倫寶</option>
+          <option value="玉寶">玉寶</option>
+          <option value="一起">一起</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>商品名稱</label>
+        <input type="text" id="inv_product" placeholder="請輸入商品名稱">
+      </div>
+      <div class="form-group">
+        <label>購買管道</label>
+        <input type="text" id="inv_channel" placeholder="如：7-11、官網">
+      </div>
+      <div class="form-group">
+        <label>購買數量</label>
+        <input type="number" id="inv_buyQty" placeholder="0" oninput="calcInvest()">
+      </div>
+      <div class="form-group">
+        <label>購買單價</label>
+        <input type="number" id="inv_buyPrice" placeholder="0" oninput="calcInvest()">
+      </div>
+      <div class="form-group">
+        <label>總成本（自動計算）</label>
+        <input type="number" id="inv_cost" placeholder="0" readonly style="background:#f8f8f8">
+      </div>
+      <div class="form-group">
+        <label>售出數量</label>
+        <input type="number" id="inv_sellQty" placeholder="0" oninput="calcInvest()">
+      </div>
+      <div class="form-group">
+        <label>售出單價</label>
+        <input type="number" id="inv_sellPrice" placeholder="0" oninput="calcInvest()">
+      </div>
+      <div class="form-group">
+        <label>售出總額（自動計算）</label>
+        <input type="number" id="inv_sellTotal" placeholder="0" readonly style="background:#f8f8f8">
+      </div>
+      <div class="form-group">
+        <label>負擔運費</label>
+        <input type="number" id="inv_shipping" placeholder="0" oninput="calcInvest()">
+      </div>
+      <div class="form-group">
+        <label>利潤（自動計算）</label>
+        <input type="number" id="inv_profit" placeholder="0" readonly style="background:#f8f8f8">
+      </div>
+      <div class="form-group">
+        <label>賣貨便匯款金額</label>
+        <input type="number" id="inv_remit" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>結案</label>
+        <select id="inv_closed">
+          <option value="false">進行中</option>
+          <option value="true">已結案</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>備註</label>
+        <textarea id="inv_note" rows="2" placeholder="可選填"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('invest')">取消</button>
+      <button class="btn btn-save" onclick="saveInvest()">🍯 儲存</button>
+    </div>
+    <input type="hidden" id="inv_editIdx" value="-1">
+  </div>
+</div>
+
+<script>
+// ── Initial Data ──────────────────────────────────────────────
+let accountData = [
+  { date: '2026-03-30', who: '倫寶', type: '收入', item: 'Passion Sisters 年度女孩卡Vol.5-精裝盒', amount: 2562, note: '' },
+  { date: '2026-03-30', who: '玉寶', type: '收入', item: 'Passion Sisters 年度女孩卡Vol.5-精裝盒', amount: 1262, note: '' },
+  { date: '2026-03-30', who: '一起', type: '收入', item: 'SJ娃', amount: 4544, note: '' },
+];
+
+let investData = [
+  { date: '2026-02-26', who: '倫寶', product: 'Passion Sisters 年度女孩卡Vol.5-精裝盒', channel: '7-11預購',   buyQty: 2, buyPrice: 3150, sellQty: 2, sellPrice: 3800, shipping: 38,  remit: 6840, closed: true,  note: '訂金($2,280)於2/26匯到倫寶戶頭' },
+  { date: '2026-02-26', who: '倫寶', product: 'Passion Sisters 年度女孩卡Vol.5-精裝盒', channel: '中信兄弟官網', buyQty: 2, buyPrice: 3150, sellQty: 2, sellPrice: 3800, shipping: 0,   remit: 6840, closed: true,  note: '12600-2280=10,320' },
+  { date: '2026-02-26', who: '玉寶', product: 'Passion Sisters 年度女孩卡Vol.5-精裝盒', channel: '中信兄弟官網', buyQty: 2, buyPrice: 3150, sellQty: 2, sellPrice: 3800, shipping: 38,  remit: 6840, closed: true,  note: '6300' },
+  { date: '2026-03-30', who: '一起', product: 'SJ娃',                                   channel: '丹丹團購',    buyQty: 7, buyPrice: 840,  sellQty: 7, sellPrice: 1500, shipping: 76,  remit: 0,    closed: false, note: '匯到倫寶戶頭3360' },
+];
+
+// ── Helpers ───────────────────────────────────────────────────
+const fmt = n => '$' + Number(n||0).toLocaleString('zh-TW');
+
+function computeBalance() {
+  let bal = 0;
+  return accountData.map(r => {
+    bal += r.type === '收入' ? r.amount : -r.amount;
+    return bal;
+  });
+}
+
+function calcRow(r) {
+  return {
+    cost:      (r.buyQty  || 0) * (r.buyPrice  || 0),
+    sellTotal: (r.sellQty || 0) * (r.sellPrice || 0),
+    get profit() { return this.sellTotal - this.cost - (r.shipping || 0); }
+  };
+}
+
+// ── Render: Account ───────────────────────────────────────────
+function renderAccount() {
+  const balances = computeBalance();
+  const body = document.getElementById('accountBody');
+  if (!accountData.length) {
+    body.innerHTML = `<tr><td colspan="8"><div class="empty"><span>🐻</span><br>尚無記錄，點右上角新增吧！</div></td></tr>`;
+    return;
+  }
+  body.innerHTML = accountData.map((r, i) => `
+    <tr>
+      <td>${r.date}</td>
+      <td><span class="badge badge-who">${r.who}</span></td>
+      <td><span class="badge ${r.type === '收入' ? 'badge-in' : 'badge-out'}">${r.type}</span></td>
+      <td>${r.item}</td>
+      <td class="${r.type === '收入' ? 'amount-pos' : 'amount-neg'}">${r.type === '支出' ? '-' : ''}${fmt(r.amount)}</td>
+      <td>${fmt(balances[i])}</td>
+      <td>${r.note || '—'}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-edit" onclick="editAccount(${i})">✏️</button>
+        <button class="btn btn-delete" onclick="deleteAccount(${i})">🗑️</button>
+      </td>
+    </tr>`).join('');
+
+  updateSummary();
+  renderCharts();
+}
+
+// ── Render: Invest ────────────────────────────────────────────
+function renderInvest() {
+  const body = document.getElementById('investBody');
+  if (!investData.length) {
+    body.innerHTML = `<tr><td colspan="16"><div class="empty"><span>📦</span><br>尚無記錄，點右上角新增吧！</div></td></tr>`;
+    return;
+  }
+  body.innerHTML = investData.map((r, i) => {
+    const c = calcRow(r);
+    return `
+    <tr>
+      <td>${r.date}</td>
+      <td><span class="badge badge-who">${r.who}</span></td>
+      <td>${r.product}</td>
+      <td>${r.channel}</td>
+      <td>${r.buyQty}</td>
+      <td>${fmt(r.buyPrice)}</td>
+      <td>${fmt(c.cost)}</td>
+      <td>${r.sellQty}</td>
+      <td>${fmt(r.sellPrice)}</td>
+      <td>${fmt(c.sellTotal)}</td>
+      <td>${fmt(r.shipping)}</td>
+      <td class="${c.profit >= 0 ? 'amount-pos' : 'amount-neg'}">${fmt(c.profit)}</td>
+      <td>${r.remit ? fmt(r.remit) : '—'}</td>
+      <td><span class="badge ${r.closed ? 'badge-closed' : 'badge-open'}">${r.closed ? '已結案' : '進行中'}</span></td>
+      <td>${r.note || '—'}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-edit" onclick="editInvest(${i})">✏️</button>
+        <button class="btn btn-delete" onclick="deleteInvest(${i})">🗑️</button>
+      </td>
+    </tr>`}).join('');
+
+  updateSummary();
+  renderCharts();
+}
+
+// ── Summary Cards ─────────────────────────────────────────────
+function updateSummary() {
+  const balances = computeBalance();
+  const lastBal  = balances.length ? balances[balances.length - 1] : 0;
+  const totalProfit = investData.reduce((s, r) => s + calcRow(r).profit, 0);
+  const closed   = investData.filter(r => r.closed).length;
+
+  document.getElementById('totalBalance').textContent  = fmt(lastBal);
+  document.getElementById('totalItems').textContent    = investData.length;
+  document.getElementById('totalProfit').textContent   = fmt(totalProfit);
+  document.getElementById('totalProfit').className     = 'value ' + (totalProfit >= 0 ? 'profit' : 'loss');
+  document.getElementById('closedItems').textContent   = closed;
+}
+
+// ── Charts ────────────────────────────────────────────────────
+let chartInstances = {};
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+const COLORS = ['#F4C430','#FF8C00','#C49A6C','#8B5E3C','#FFF3C4','#FFD580'];
+
+function renderCharts() {
+  // -- Account: who pie --
+  destroyChart('chartWho');
+  const whoMap = {};
+  accountData.forEach(r => {
+    const v = r.type === '收入' ? r.amount : -r.amount;
+    whoMap[r.who] = (whoMap[r.who] || 0) + v;
+  });
+  chartInstances['chartWho'] = new Chart(document.getElementById('chartWho'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(whoMap),
+      datasets: [{ data: Object.values(whoMap).map(Math.abs), backgroundColor: COLORS }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } }, responsive: true }
+  });
+
+  // -- Account: in/out bar --
+  destroyChart('chartInOut');
+  const totalIn  = accountData.filter(r => r.type === '收入').reduce((s, r) => s + r.amount, 0);
+  const totalOut = accountData.filter(r => r.type === '支出').reduce((s, r) => s + r.amount, 0);
+  chartInstances['chartInOut'] = new Chart(document.getElementById('chartInOut'), {
+    type: 'bar',
+    data: {
+      labels: ['收入', '支出'],
+      datasets: [{ data: [totalIn, totalOut], backgroundColor: ['#27AE60','#E74C3C'], borderRadius: 8 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+      responsive: true
+    }
+  });
+
+  // -- Invest: profit bar --
+  destroyChart('chartProfit');
+  const prodMap = {};
+  investData.forEach(r => {
+    const p = calcRow(r).profit;
+    prodMap[r.product] = (prodMap[r.product] || 0) + p;
+  });
+  chartInstances['chartProfit'] = new Chart(document.getElementById('chartProfit'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(prodMap).map(k => k.length > 12 ? k.slice(0,12) + '…' : k),
+      datasets: [{
+        data: Object.values(prodMap),
+        backgroundColor: Object.values(prodMap).map(v => v >= 0 ? '#27AE60' : '#E74C3C'),
+        borderRadius: 8
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+      responsive: true
+    }
+  });
+
+  // -- Invest: who pie --
+  destroyChart('chartInvestWho');
+  const invWhoMap = {};
+  investData.forEach(r => {
+    invWhoMap[r.who] = (invWhoMap[r.who] || 0) + calcRow(r).cost;
+  });
+  chartInstances['chartInvestWho'] = new Chart(document.getElementById('chartInvestWho'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(invWhoMap),
+      datasets: [{ data: Object.values(invWhoMap), backgroundColor: COLORS }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } }, responsive: true }
+  });
+}
+
+// ── Tab Switch ────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-account').style.display = tab === 'account' ? 'block' : 'none';
+  document.getElementById('tab-invest').style.display  = tab === 'invest'  ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'account') || (i === 1 && tab === 'invest'));
+  });
+  renderCharts();
+}
+
+// ── Modal: Account ────────────────────────────────────────────
+function openModal(type) {
+  if (type === 'account') {
+    document.getElementById('modalAccountTitle').textContent = '新增收支記錄';
+    document.getElementById('acc_date').value   = new Date().toISOString().slice(0,10);
+    document.getElementById('acc_who').value    = '倫寶';
+    document.getElementById('acc_type').value   = '收入';
+    document.getElementById('acc_amount').value = '';
+    document.getElementById('acc_item').value   = '';
+    document.getElementById('acc_note').value   = '';
+    document.getElementById('acc_editIdx').value = -1;
+    document.getElementById('modalAccount').classList.add('show');
+  } else {
+    document.getElementById('modalInvestTitle').textContent = '新增投資商品';
+    document.getElementById('inv_date').value    = new Date().toISOString().slice(0,10);
+    document.getElementById('inv_who').value     = '倫寶';
+    document.getElementById('inv_product').value = '';
+    document.getElementById('inv_channel').value = '';
+    document.getElementById('inv_buyQty').value  = '';
+    document.getElementById('inv_buyPrice').value= '';
+    document.getElementById('inv_cost').value    = '';
+    document.getElementById('inv_sellQty').value = '';
+    document.getElementById('inv_sellPrice').value='';
+    document.getElementById('inv_sellTotal').value='';
+    document.getElementById('inv_shipping').value= '';
+    document.getElementById('inv_profit').value  = '';
+    document.getElementById('inv_remit').value   = '';
+    document.getElementById('inv_closed').value  = 'false';
+    document.getElementById('inv_note').value    = '';
+    document.getElementById('inv_editIdx').value = -1;
+    document.getElementById('modalInvest').classList.add('show');
+  }
+}
+
+function closeModal(type) {
+  document.getElementById(type === 'account' ? 'modalAccount' : 'modalInvest').classList.remove('show');
+}
+
+function editAccount(i) {
+  const r = accountData[i];
+  document.getElementById('modalAccountTitle').textContent = '編輯收支記錄';
+  document.getElementById('acc_date').value   = r.date;
+  document.getElementById('acc_who').value    = r.who;
+  document.getElementById('acc_type').value   = r.type;
+  document.getElementById('acc_amount').value = r.amount;
+  document.getElementById('acc_item').value   = r.item;
+  document.getElementById('acc_note').value   = r.note;
+  document.getElementById('acc_editIdx').value = i;
+  document.getElementById('modalAccount').classList.add('show');
+}
+
+function saveAccount() {
+  const idx = parseInt(document.getElementById('acc_editIdx').value);
+  const record = {
+    date:   document.getElementById('acc_date').value,
+    who:    document.getElementById('acc_who').value,
+    type:   document.getElementById('acc_type').value,
+    amount: parseFloat(document.getElementById('acc_amount').value) || 0,
+    item:   document.getElementById('acc_item').value,
+    note:   document.getElementById('acc_note').value,
+  };
+  if (idx >= 0) accountData[idx] = record;
+  else accountData.push(record);
+  closeModal('account');
+  renderAccount();
+}
+
+function deleteAccount(i) {
+  if (!confirm('確定刪除這筆記錄？')) return;
+  accountData.splice(i, 1);
+  renderAccount();
+}
+
+// ── Modal: Invest ─────────────────────────────────────────────
+function calcInvest() {
+  const bq = parseFloat(document.getElementById('inv_buyQty').value)   || 0;
+  const bp = parseFloat(document.getElementById('inv_buyPrice').value)  || 0;
+  const sq = parseFloat(document.getElementById('inv_sellQty').value)   || 0;
+  const sp = parseFloat(document.getElementById('inv_sellPrice').value)  || 0;
+  const sh = parseFloat(document.getElementById('inv_shipping').value)  || 0;
+  const cost      = bq * bp;
+  const sellTotal = sq * sp;
+  const profit    = sellTotal - cost - sh;
+  document.getElementById('inv_cost').value      = cost;
+  document.getElementById('inv_sellTotal').value = sellTotal;
+  document.getElementById('inv_profit').value    = profit;
+}
+
+function editInvest(i) {
+  const r = investData[i];
+  document.getElementById('modalInvestTitle').textContent = '編輯投資商品';
+  document.getElementById('inv_date').value     = r.date;
+  document.getElementById('inv_who').value      = r.who;
+  document.getElementById('inv_product').value  = r.product;
+  document.getElementById('inv_channel').value  = r.channel;
+  document.getElementById('inv_buyQty').value   = r.buyQty;
+  document.getElementById('inv_buyPrice').value = r.buyPrice;
+  document.getElementById('inv_sellQty').value  = r.sellQty;
+  document.getElementById('inv_sellPrice').value= r.sellPrice;
+  document.getElementById('inv_shipping').value = r.shipping;
+  document.getElementById('inv_remit').value    = r.remit;
+  document.getElementById('inv_closed').value   = r.closed ? 'true' : 'false';
+  document.getElementById('inv_note').value     = r.note;
+  document.getElementById('inv_editIdx').value  = i;
+  calcInvest();
+  document.getElementById('modalInvest').classList.add('show');
+}
+
+function saveInvest() {
+  const idx = parseInt(document.getElementById('inv_editIdx').value);
+  const record = {
+    date:       document.getElementById('inv_date').value,
+    who:        document.getElementById('inv_who').value,
+    product:    document.getElementById('inv_product').value,
+    channel:    document.getElementById('inv_channel').value,
+    buyQty:     parseFloat(document.getElementById('inv_buyQty').value)    || 0,
+    buyPrice:   parseFloat(document.getElementById('inv_buyPrice').value)   || 0,
+    sellQty:    parseFloat(document.getElementById('inv_sellQty').value)    || 0,
+    sellPrice:  parseFloat(document.getElementById('inv_sellPrice').value)   || 0,
+    shipping:   parseFloat(document.getElementById('inv_shipping').value)   || 0,
+    remit:      parseFloat(document.getElementById('inv_remit').value)      || 0,
+    closed:     document.getElementById('inv_closed').value === 'true',
+    note:       document.getElementById('inv_note').value,
+  };
+  if (idx >= 0) investData[idx] = record;
+  else investData.push(record);
+  closeModal('invest');
+  renderInvest();
+}
+
+function deleteInvest(i) {
+  if (!confirm('確定刪除這筆商品？')) return;
+  investData.splice(i, 1);
+  renderInvest();
+}
+
+// ── Close modal on overlay click ─────────────────────────────
+document.getElementById('modalAccount').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('account');
+});
+document.getElementById('modalInvest').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('invest');
+});
+
+// ── Init ──────────────────────────────────────────────────────
+renderAccount();
+renderInvest();
+</script>
+</body>
+</html>
