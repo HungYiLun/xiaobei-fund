@@ -5,6 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍯 小貝基金戶</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  // 密碼保護
+  (function() {
+    const CORRECT = '11030206';
+    const KEY = 'xiaobei_auth';
+    if (sessionStorage.getItem(KEY) !== 'ok') {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.style.display = 'none';
+        showLoginScreen();
+      });
+    }
+    function showLoginScreen() {
+      const overlay = document.createElement('div');
+      overlay.id = 'loginOverlay';
+      overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9999;
+        background:linear-gradient(135deg,#F4C430 0%,#FF8C00 100%);
+        display:flex;align-items:center;justify-content:center;
+        font-family:'Noto Sans TC',sans-serif;
+      `;
+      overlay.innerHTML = `
+        <div style="background:#fff;border-radius:24px;padding:40px 36px;text-align:center;
+                    box-shadow:0 20px 60px rgba(0,0,0,.2);width:90%;max-width:360px;">
+          <div style="font-size:64px;margin-bottom:8px;">🐻</div>
+          <h2 style="color:#8B5E3C;font-size:22px;margin-bottom:4px;">小貝基金戶</h2>
+          <p style="color:#C49A6C;font-size:13px;margin-bottom:24px;">🍯 請輸入密碼以進入</p>
+          <input id="pwInput" type="password" placeholder="請輸入密碼"
+            style="width:100%;padding:12px 16px;border:2px solid #f0ddb8;border-radius:12px;
+                   font-size:16px;text-align:center;outline:none;box-sizing:border-box;
+                   font-family:inherit;background:#FFF8E7;"
+            onkeydown="if(event.key==='Enter')checkPw()">
+          <div id="pwError" style="color:#E74C3C;font-size:12px;margin-top:8px;min-height:18px;"></div>
+          <button onclick="checkPw()"
+            style="margin-top:12px;width:100%;padding:12px;background:linear-gradient(135deg,#F4C430,#FF8C00);
+                   border:none;border-radius:12px;font-size:16px;font-weight:700;
+                   color:#8B5E3C;cursor:pointer;">
+            🍯 進入
+          </button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.body.style.display = 'block';
+      setTimeout(() => document.getElementById('pwInput').focus(), 100);
+    }
+    window.checkPw = function() {
+      const val = document.getElementById('pwInput').value;
+      if (val === CORRECT) {
+        sessionStorage.setItem(KEY, 'ok');
+        document.getElementById('loginOverlay').remove();
+      } else {
+        const err = document.getElementById('pwError');
+        err.textContent = '❌ 密碼錯誤，請再試一次';
+        document.getElementById('pwInput').value = '';
+        document.getElementById('pwInput').focus();
+        setTimeout(() => { err.textContent = ''; }, 3000);
+      }
+    };
+  })();
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
